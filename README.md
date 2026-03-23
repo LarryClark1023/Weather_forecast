@@ -199,14 +199,16 @@ Set `VITE_API_BASE_URL` (see `.env.example`) to point at your deployed API; defa
 ### How the frontend uses the API (matches the code)
 
 1. **`src/services/api.js`** — Axios instance with `baseURL` from `VITE_API_BASE_URL` or the localhost default. **`getWeather(city)`** → `GET /weather?city=…`. **`getWeatherByCoords(lat, lon)`** → `GET /weather?lat=…&lon=…`.
-2. **`App.vue`** — Search submits **`getWeather`**; “Use my location” uses **`navigator.geolocation`** then **`getWeatherByCoords`**. On success it keeps **`bundle`** = full JSON (`meta`, `current`, `forecast`). **`addRecentCity`** runs after a successful city search or after geolocation when `current.city` exists (recent list in **`localStorage`** via `utils/recentCities.js`).
-3. **Units** — API values stay metric; **`WeatherCard`** and **`ForecastSection`** use **`utils/displayUnits.js`** with preferences from **`utils/preferences.js`** (°C/°F, m/s/mph).
-4. **Illustrations** — **`utils/weatherArt.js`** maps OWM-style `condition` / `icon` / `description` to SVGs under **`src/assets/weather/`**, rendered by **`WeatherIllustration.vue`**.
-5. **Footer** — **`AppFooter.vue`** reads **`bundle.meta`** when present (last updated, cache hint, sources); before the first load it still shows the same source list and note from static defaults in that component.
-6. **Errors** — Axios **`429`** shows a dedicated “too many requests” message; other failures use **`response.data.error`** when present. **`aria-live`** announces load/error status for assistive tech.
+2. **`main.ts`** — Calls **`initTheme()`** before mounting the app so the correct light/dark class is on `<html>` on first paint. **`tailwind.config.js`** uses **`darkMode: 'class'`**; **`style.css`** sets `color-scheme` for native controls.
+3. **`App.vue`** — Search submits **`getWeather`**; “Use my location” uses **`navigator.geolocation`** then **`getWeatherByCoords`**. On success it keeps **`bundle`** = full JSON (`meta`, `current`, `forecast`). **`addRecentCity`** runs after a successful city search or after geolocation when `current.city` exists (recent list in **`localStorage`** via `utils/recentCities.js`). Theme (**Light / Dark / System**) is persisted with **`utils/preferences.ts`** and applied via **`utils/theme.ts`** (`setThemeMode` updates `localStorage` and toggles the `dark` class).
+4. **Units** — API values stay metric; **`WeatherCard`** and **`ForecastSection`** use **`utils/displayUnits.js`** with preferences from **`utils/preferences.ts`** (°C/°F, m/s/mph).
+5. **Illustrations** — **`utils/weatherArt.js`** maps OWM-style `condition` / `icon` / `description` to SVGs under **`src/assets/weather/`**, rendered by **`WeatherIllustration.vue`**.
+6. **Footer** — **`AppFooter.vue`** reads **`bundle.meta`** when present (last updated, cache hint, sources); before the first load it still shows the same source list and note from static defaults in that component.
+7. **Errors** — Axios **`429`** shows a dedicated “too many requests” message; other failures use **`response.data.error`** when present. **`aria-live`** announces load/error status for assistive tech.
 
 ### Product features
 
+- **Light / dark / system theme** — `class`-based Tailwind dark mode; choice stored in `localStorage` (`wf_color_mode`). `initTheme()` in `main.ts` applies the `dark` class on `<html>` and listens for OS changes when mode is **System**.
 - **Unit toggles** — °C / °F and m/s / mph (stored in `localStorage`).
 - **Recent cities** — quick chips under the search field.
 - **Use my location** — browser geolocation → `GET /api/weather?lat=&lon=`.
@@ -221,7 +223,8 @@ weather-frontend/
 │   ├── components/     # App.vue, SearchBar, WeatherCard, ForecastSection, PreferencesBar, AppFooter, WeatherIllustration, …
 │   ├── services/api.js
 │   ├── utils/weatherArt.js
-│   ├── utils/preferences.js
+│   ├── utils/preferences.ts
+│   ├── utils/theme.ts
 │   ├── utils/recentCities.js
 │   ├── utils/displayUnits.js
 │   ├── assets/weather/

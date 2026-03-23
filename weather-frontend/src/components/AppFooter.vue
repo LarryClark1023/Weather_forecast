@@ -1,27 +1,29 @@
 <template>
   <footer
-    class="mt-12 border-t border-white/10 pt-6 text-center text-xs leading-relaxed text-slate-500"
+    class="mt-12 border-t border-slate-200 pt-6 text-center text-xs leading-relaxed text-slate-500 dark:border-white/10 dark:text-slate-500"
   >
-    <p class="font-medium text-slate-400">Data sources</p>
+    <p class="font-medium text-slate-600 dark:text-slate-400">Data sources</p>
     <ul class="mt-2 flex flex-wrap justify-center gap-x-4 gap-y-1">
       <li v-for="s in sources" :key="s.id">
         <a
           :href="s.url"
-          class="text-sky-400/90 underline-offset-2 hover:text-sky-300 hover:underline"
+          class="text-sky-700 underline-offset-2 hover:text-sky-900 hover:underline dark:text-sky-400/90 dark:hover:text-sky-300"
           target="_blank"
           rel="noopener noreferrer"
           >{{ s.label }}</a
         >
-        <span class="text-slate-600"> — {{ s.role }}</span>
+        <span class="text-slate-500 dark:text-slate-600"> — {{ s.role }}</span>
       </li>
     </ul>
-    <p v-if="note" class="mx-auto mt-3 max-w-2xl text-slate-500">{{ note }}</p>
-    <p v-if="fetchedAt" class="mt-3 text-slate-600">
+    <p v-if="note" class="mx-auto mt-3 max-w-2xl text-slate-600 dark:text-slate-500">{{ note }}</p>
+    <p v-if="fetchedAt" class="mt-3 text-slate-600 dark:text-slate-600">
       Last updated (server time, UTC):
       <time :datetime="fetchedAt">{{ formattedTime }}</time>
-      <span v-if="cacheHit" class="ml-1 text-slate-500">(served from cache)</span>
+      <span v-if="cacheHit" class="ml-1 text-slate-500 dark:text-slate-500">(served from cache)</span>
     </p>
-    <p v-else class="mt-3 text-slate-600">Search a city or use your location to load timestamps from the API.</p>
+    <p v-else class="mt-3 text-slate-600 dark:text-slate-600">
+      Search a city or use your location to load timestamps from the API.
+    </p>
   </footer>
 </template>
 

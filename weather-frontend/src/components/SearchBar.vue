@@ -13,14 +13,14 @@
           :disabled="loading"
           :aria-invalid="validationError ? 'true' : 'false'"
           :aria-describedby="ariaDescribedBy"
-          class="w-full rounded-l-xl border border-white/10 bg-white/5 px-4 py-3 text-slate-100 placeholder:text-slate-500 outline-none ring-sky-400/40 transition focus:border-sky-400/50 focus:ring-2 disabled:opacity-50"
+          class="w-full rounded-l-xl border border-slate-300 bg-white px-4 py-3 text-slate-900 placeholder:text-slate-400 outline-none ring-sky-400/40 transition focus:border-sky-500 focus:ring-2 disabled:opacity-50 dark:border-white/10 dark:bg-white/5 dark:text-slate-100 dark:placeholder:text-slate-500 dark:focus:border-sky-400/50"
           @input="onInput"
           @keyup.enter="searchWeather"
         />
         <button
           type="button"
           :disabled="loading"
-          class="rounded-r-xl bg-sky-500 px-6 py-3 font-medium text-white transition hover:bg-sky-400 disabled:cursor-not-allowed disabled:opacity-50"
+          class="rounded-r-xl bg-sky-600 px-6 py-3 font-medium text-white transition hover:bg-sky-500 disabled:cursor-not-allowed disabled:opacity-50 dark:bg-sky-500 dark:hover:bg-sky-400"
           aria-label="Search weather for this city"
           @click="searchWeather"
         >
@@ -28,20 +28,22 @@
         </button>
       </div>
     </div>
-    <p id="city-search-hint" class="mt-2 text-center text-xs text-slate-500">
+    <p id="city-search-hint" class="mt-2 text-center text-xs text-slate-500 dark:text-slate-500">
       Search by city name, pick a recent city below, or use your location.
     </p>
     <p
       v-if="validationError"
       id="city-search-error"
-      class="mt-1 text-center text-sm text-amber-400"
+      class="mt-1 text-center text-sm text-amber-700 dark:text-amber-400"
       role="alert"
     >
       {{ validationError }}
     </p>
 
     <div v-if="recentCities.length" class="mt-4">
-      <p class="mb-2 text-center text-xs font-medium uppercase tracking-wide text-slate-500">
+      <p
+        class="mb-2 text-center text-xs font-medium uppercase tracking-wide text-slate-500 dark:text-slate-500"
+      >
         Recent
       </p>
       <div class="flex flex-wrap justify-center gap-2" role="list">
@@ -49,7 +51,7 @@
           v-for="c in recentCities"
           :key="c"
           type="button"
-          class="rounded-full border border-white/10 bg-white/5 px-3 py-1 text-sm text-slate-300 transition hover:border-sky-500/40 hover:text-white disabled:opacity-50"
+          class="rounded-full border border-slate-200 bg-white px-3 py-1 text-sm text-slate-700 shadow-sm transition hover:border-sky-400 hover:text-sky-800 disabled:opacity-50 dark:border-white/10 dark:bg-white/5 dark:text-slate-300 dark:hover:border-sky-500/40 dark:hover:text-white"
           :disabled="loading"
           role="listitem"
           @click="selectRecent(c)"

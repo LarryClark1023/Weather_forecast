@@ -1,23 +1,27 @@
 <template>
   <div
-    class="min-h-screen bg-gradient-to-br from-slate-950 via-slate-900 to-sky-950 text-slate-100"
+    class="min-h-screen bg-gradient-to-br from-slate-100 via-sky-50 to-slate-100 text-slate-900 dark:bg-gradient-to-br dark:from-slate-950 dark:via-slate-900 dark:to-sky-950 dark:text-slate-100"
   >
     <div class="container mx-auto max-w-5xl px-4 py-10 pb-16">
       <header class="text-center">
-        <p class="text-sm font-medium uppercase tracking-[0.2em] text-sky-400/80">Live weather</p>
-        <h1 class="mt-2 text-3xl font-bold tracking-tight text-white sm:text-4xl">
+        <p class="text-sm font-medium uppercase tracking-[0.2em] text-sky-700 dark:text-sky-400/80">
+          Live weather
+        </p>
+        <h1 class="mt-2 text-3xl font-bold tracking-tight text-slate-900 dark:text-white sm:text-4xl">
           Weather forecast
         </h1>
-        <p class="mx-auto mt-3 max-w-lg text-slate-400">
+        <p class="mx-auto mt-3 max-w-lg text-slate-600 dark:text-slate-400">
           Current conditions and up to six forecast days (tomorrow onward; today excluded).
         </p>
       </header>
 
       <PreferencesBar
+        :theme-mode="themeMode"
         :temp-celsius="tempCelsius"
         :wind-ms="windMs"
         :geo-loading="geoLoading"
         :busy="loading || geoLoading"
+        @update:theme-mode="onThemeMode"
         @update:temp-celsius="onTempUnit"
         @update:wind-ms="onWindUnit"
         @geolocate="fetchByGeolocation"
@@ -34,7 +38,7 @@
 
       <div
         v-if="errorMessage"
-        class="mt-8 rounded-xl border border-red-500/30 bg-red-950/40 px-4 py-3 text-center text-red-200"
+        class="mt-8 rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-center text-red-800 dark:border-red-500/30 dark:bg-red-950/40 dark:text-red-200"
         role="alert"
       >
         {{ errorMessage }}
@@ -66,8 +70,9 @@ import ForecastSection from './components/ForecastSection.vue';
 import AppFooter from './components/AppFooter.vue';
 import PreferencesBar from './components/PreferencesBar.vue';
 import { getWeather, getWeatherByCoords } from './services/api.js';
-import { loadPreferences, saveTempUnit, saveWindUnit } from './utils/preferences.js';
+import { loadPreferences, saveTempUnit, saveWindUnit } from './utils/preferences';
 import { getRecentCities, addRecentCity } from './utils/recentCities.js';
+import { setThemeMode } from './utils/theme';
 
 export default {
   components: {
@@ -86,6 +91,7 @@ export default {
     const prefs = loadPreferences();
     const tempCelsius = ref(prefs.tempCelsius);
     const windMs = ref(prefs.windMetersPerSecond);
+    const themeMode = ref(prefs.themeMode);
     const recentCities = ref(getRecentCities());
 
     const refreshRecent = () => {
@@ -109,6 +115,11 @@ export default {
     const onWindUnit = (v) => {
       windMs.value = v;
       saveWindUnit(v);
+    };
+
+    const onThemeMode = (mode) => {
+      themeMode.value = mode;
+      setThemeMode(mode);
     };
 
     const handleApiError = (error) => {
@@ -183,10 +194,12 @@ export default {
       cityInput,
       tempCelsius,
       windMs,
+      themeMode,
       recentCities,
       a11yStatus,
       onTempUnit,
       onWindUnit,
+      onThemeMode,
       fetchWeatherByCity,
       fetchByGeolocation,
     };
