@@ -24,6 +24,25 @@ def get_current_weather(city):
     return response.json()
 
 
+def get_current_weather_coords(lat: float, lon: float):
+    if not API_KEY:
+        return {
+            "error": "Weather API key is not configured. Set WEATHER_API_KEY in backend/.env.",
+            "error_type": "config",
+        }
+
+    response = requests.get(
+        f"{BASE_URL}/weather",
+        params={"lat": lat, "lon": lon, "appid": API_KEY, "units": "metric"},
+        timeout=15,
+    )
+
+    if response.status_code != 200:
+        return {"error": "Location not found"}
+
+    return response.json()
+
+
 def get_forecast(city):
     if not API_KEY:
         return {
@@ -39,6 +58,25 @@ def get_forecast(city):
 
     if response.status_code != 200:
         return {"error": "City not found"}
+
+    return response.json()
+
+
+def get_forecast_coords(lat: float, lon: float):
+    if not API_KEY:
+        return {
+            "error": "Weather API key is not configured. Set WEATHER_API_KEY in backend/.env.",
+            "error_type": "config",
+        }
+
+    response = requests.get(
+        f"{BASE_URL}/forecast",
+        params={"lat": lat, "lon": lon, "appid": API_KEY, "units": "metric"},
+        timeout=15,
+    )
+
+    if response.status_code != 200:
+        return {"error": "Location not found"}
 
     return response.json()
 

@@ -1,10 +1,10 @@
 <template>
-  <section class="mt-10">
+  <section class="mt-10" aria-labelledby="forecast-heading">
     <div class="mb-4 flex flex-wrap items-end justify-between gap-2">
       <div>
-        <h3 class="text-lg font-semibold text-white">Next 6 days</h3>
+        <h3 id="forecast-heading" class="text-lg font-semibold text-white">Next 6 days</h3>
         <p class="text-sm text-slate-400">
-          Starting tomorrow — today is not included. Each day shows daily high and low (°C).
+          Starting tomorrow — today is not included. Each day shows daily high and low ({{ tempSuffix }}).
         </p>
       </div>
       <p v-if="days.length > 0 && days.length < 6" class="max-w-xs text-right text-xs text-slate-500">
@@ -22,11 +22,13 @@
     <div
       v-else
       class="flex gap-3 overflow-x-auto pb-2 sm:grid sm:grid-cols-2 sm:overflow-visible md:grid-cols-3 lg:grid-cols-6"
+      role="list"
     >
       <article
         v-for="day in days"
         :key="day.date"
         class="min-w-[8.5rem] flex-shrink-0 rounded-xl border border-white/10 bg-white/5 p-4 text-center backdrop-blur-sm"
+        role="listitem"
       >
         <p class="text-xs font-medium uppercase tracking-wide text-sky-300">{{ day.weekday }}</p>
         <p class="text-sm text-slate-400">{{ day.label }}</p>
@@ -41,17 +43,17 @@
         <div class="mt-3 space-y-2 border-t border-white/10 pt-3">
           <div class="flex items-center justify-between gap-2 text-sm">
             <span class="text-xs font-semibold uppercase tracking-wide text-rose-300/90">High</span>
-            <span class="text-lg font-bold text-white">{{ day.temp_max }}°</span>
+            <span class="text-lg font-bold text-white">{{ formatTemp(day.temp_max) }}°</span>
           </div>
           <div class="flex items-center justify-between gap-2 text-sm">
             <span class="text-xs font-semibold uppercase tracking-wide text-sky-300/90">Low</span>
-            <span class="text-lg font-semibold text-sky-100">{{ day.temp_min }}°</span>
+            <span class="text-lg font-semibold text-sky-100">{{ formatTemp(day.temp_min) }}°</span>
           </div>
         </div>
 
         <p class="mt-3 line-clamp-2 text-xs capitalize text-slate-400">{{ day.description }}</p>
         <p class="mt-2 text-[11px] text-slate-500">
-          Humidity ~{{ day.humidity }}% · Wind {{ day.wind_speed }} m/s
+          Humidity ~{{ day.humidity }}% · Wind {{ formatWind(day.wind_speed) }} {{ windSuffix }}
         </p>
       </article>
     </div>
@@ -60,6 +62,12 @@
 
 <script>
 import WeatherIllustration from './WeatherIllustration.vue';
+import {
+  formatTempCelsius,
+  formatWindMs,
+  tempUnitSuffix,
+  windUnitSuffix,
+} from '../utils/displayUnits.js';
 
 export default {
   components: { WeatherIllustration },
@@ -67,6 +75,24 @@ export default {
     days: {
       type: Array,
       default: () => [],
+    },
+    tempCelsius: { type: Boolean, default: true },
+    windMs: { type: Boolean, default: true },
+  },
+  computed: {
+    tempSuffix() {
+      return tempUnitSuffix(this.tempCelsius);
+    },
+    windSuffix() {
+      return windUnitSuffix(this.windMs);
+    },
+  },
+  methods: {
+    formatTemp(v) {
+      return formatTempCelsius(v, this.tempCelsius);
+    },
+    formatWind(v) {
+      return formatWindMs(v, this.windMs);
     },
   },
 };
