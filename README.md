@@ -1,6 +1,6 @@
-# Weather forecast app
+This repository is a full-stack weather dashboard: a **Flask** backend talks to **OpenWeatherMap** for live conditions and daily-style forecasts, and a **Vue 3 + Vite + Tailwind** frontend lets you search by city, see current stats (temp, humidity, wind, and more), and browse up to six future days with labeled highs and lows and local SVG weather art.
 
-Full-stack weather app: **Flask** backend (OpenWeatherMap) and **Vue 3 + Vite** frontend. The UI shows current conditions and a multi-day forecast (from tomorrow; up to six days depending on the free API).
+# Weather forecast app
 
 ## Repository layout
 
