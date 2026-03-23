@@ -24,7 +24,8 @@ def _local_datetime(unix_ts: int, tz_offset_sec: int) -> datetime:
 def format_daily_forecast(data, num_days: int = 6):
     """
     Build up to `num_days` daily summaries starting tomorrow (city-local dates),
-    excluding today. OpenWeatherMap free forecast may return fewer than 6 days.
+    excluding today. The free OWM 3-hour feed may not cover all `num_days`;
+    `build_six_day_forecast` fills gaps with Open-Meteo.
     """
     tz_off = data["city"]["timezone"]
     now_local_date = (_local_datetime(int(datetime.now(timezone.utc).timestamp()), tz_off)).date()
@@ -68,3 +69,46 @@ def format_daily_forecast(data, num_days: int = 6):
         )
 
     return days
+
+
+def build_six_day_forecast(raw_current: dict, raw_forecast: dict) -> list:
+    """
+    Six calendar days starting tomorrow (city-local), excluding today.
+    Prefer OpenWeatherMap 3-hour aggregation; fill gaps with Open-Meteo daily (free, no key)
+    so the sixth day appears when OWM's 5-day window runs out.
+    """
+    from app.services.weather_service import get_open_meteo_daily
+    from app.utils.open_meteo_daily import open_meteo_daily_by_date
+
+    num_days = 6
+    tz_off = raw_current["timezone"]
+    now_local_date = (
+        _local_datetime(int(datetime.now(timezone.utc).timestamp()), tz_off)
+    ).date()
+    target_dates = [now_local_date + timedelta(days=i + 1) for i in range(num_days)]
+
+    owm_days = (
+        format_daily_forecast(raw_forecast, num_days=num_days)
+        if raw_forecast.get("list")
+        else []
+    )
+    by_owm = {d["date"]: d for d in owm_days}
+
+    need_fill = any(td.isoformat() not in by_owm for td in target_dates)
+    om_by_date = {}
+    if need_fill:
+        coord = raw_current.get("coord") or {}
+        lat, lon = coord.get("lat"), coord.get("lon")
+        if lat is not None and lon is not None:
+            om = get_open_meteo_daily(float(lat), float(lon))
+            if om and om.get("daily"):
+                om_by_date = open_meteo_daily_by_date(om["daily"])
+
+    out = []
+    for td in target_dates:
+        key = td.isoformat()
+        if key in by_owm:
+            out.append(by_owm[key])
+        elif key in om_by_date:
+            out.append(om_by_date[key])
+    return out

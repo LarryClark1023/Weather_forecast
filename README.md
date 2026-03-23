@@ -94,6 +94,8 @@ Success body shape:
 
 Errors: `400` (missing city), `404` (city not found), `503` (missing `WEATHER_API_KEY`).
 
+The six-day outlook (starting tomorrow) is built from OpenWeatherMap’s 3-hour forecast when possible; any missing calendar days are filled using [Open-Meteo](https://open-meteo.com/)’s free daily model at the same coordinates (no extra API key). Your UI still only needs the OWM key for current weather and the OWM forecast call.
+
 ### Structure
 
 ```
@@ -102,6 +104,7 @@ backend/
 │   ├── routes/weather_routes.py
 │   ├── services/weather_service.py
 │   ├── utils/formatter.py
+│   ├── utils/open_meteo_daily.py
 │   ├── config.py
 │   └── __init__.py
 ├── run.py
@@ -172,5 +175,5 @@ weather-frontend/
 
 ## Notes
 
-- OpenWeatherMap **free** forecast data may return fewer than six future days; the UI explains when that happens.
+- If Open-Meteo is unreachable, you may get fewer than six forecast cards; the UI notes when that happens.
 - Keep API keys only in `backend/.env`.

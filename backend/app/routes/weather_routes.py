@@ -1,7 +1,7 @@
 from flask import Blueprint, request, jsonify
 
 from app.services.weather_service import get_current_weather, get_forecast
-from app.utils.formatter import format_daily_forecast, format_weather
+from app.utils.formatter import build_six_day_forecast, format_weather
 
 weather_bp = Blueprint("weather", __name__)
 
@@ -19,9 +19,10 @@ def weather():
         return jsonify(payload), status
 
     raw_forecast = get_forecast(city)
-    forecast_days = []
-    if "list" in raw_forecast:
-        forecast_days = format_daily_forecast(raw_forecast, num_days=6)
+    if "error" in raw_forecast and "list" not in raw_forecast:
+        raw_forecast = {"list": []}
+
+    forecast_days = build_six_day_forecast(raw_current, raw_forecast)
 
     return jsonify(
         {

@@ -8,8 +8,7 @@
         </p>
       </div>
       <p v-if="days.length > 0 && days.length < 6" class="max-w-xs text-right text-xs text-slate-500">
-        Showing {{ days.length }} of 6 days — the free forecast API usually returns about five days
-        after tomorrow.
+        Showing {{ days.length }} of 6 days — forecast data was incomplete for this location.
       </p>
     </div>
 
