@@ -53,48 +53,94 @@ python run.py
 
 Default URL: `http://127.0.0.1:5000`
 
-### API
+### How the backend builds a response (matches the code)
+
+1. **`GET /api/weather`** accepts either **`city`** (trimmed, non-empty) **or** **`lat` + `lon`** (floats in valid ranges). If `lat`/`lon` are partially sent or invalid, the API returns **400** with `{"error": "Invalid latitude or longitude"}`. If neither mode is satisfied, **400** with `{"error": "City is required, or provide lat and lon"}`.
+2. **Cache** — The handler looks up an in-memory entry keyed by **`city:<lowercase city>`** or **`geo:<lat rounded 4dp>:<lon rounded 4dp>`**. If found and younger than **`WEATHER_CACHE_TTL`** (default 300 seconds), the handler returns the stored JSON immediately with **`meta.cache_hit`: true**. In that case **`meta.fetched_at`** is the **original** UTC time when that entry was first stored (not “now”).
+3. **Upstream** — On a miss, it calls OpenWeatherMap **`/weather`** then **`/forecast`** (same query: city name or lat/lon). If the forecast call returns an error object without a `list`, the code still continues with an empty list (forecast can be rebuilt from Open-Meteo only).
+4. **Assembly** — `format_weather` shapes **current** from OWM. **`build_six_day_forecast`** (in `formatter.py`) builds **six** local-calendar days **starting tomorrow** (today is excluded): it aggregates OWM’s 3-hour `list` by date using the location’s **`timezone`** offset, then **fills any missing dates** using [Open-Meteo](https://open-meteo.com/) daily data at **`raw_current["coord"]`** (no extra API key). WMO codes are mapped to OWM-like `condition` / `description` / `icon` for the frontend art.
+5. **Success JSON** — The handler stores `{ fetched_at, current, forecast }` in the cache and returns it with **`meta`** (`sources`, `note`, `cache_hit: false`).
+6. **Errors** — For upstream/config failures, responses are **`{"error": "..."}`** (and **`error_type`: `"config"`** is stripped before sending). These error bodies **do not** include `meta`, `current`, or `forecast`.
+7. **Rate limiting** — **Flask-Limiter** applies **only** to **`GET /api/weather`** (not `/api/health` or `/api/test`). Default limit: **`60 per minute`** per client IP (`RATE_LIMIT_WEATHER`).
+
+### API reference
 
 | Method | Path | Description |
 |--------|------|-------------|
-| GET | `/api/health` | JSON health payload (status, service name, UTC time). |
-| GET | `/api/test` | Simple “backend working” message. |
-| GET | `/api/weather?city=<name>` | Current + forecast. `city` required unless `lat`/`lon` are used. |
-| GET | `/api/weather?lat=<n>&lon=<n>` | Same as above using coordinates (browser geolocation flow). |
+| GET | `/api/health` | JSON health payload (status, service name, UTC time). Not rate-limited. |
+| GET | `/api/test` | Simple “backend working” message. Not rate-limited. |
+| GET | `/api/weather?city=<name>` | Current + forecast. `city` required unless `lat`/`lon` are used. Rate-limited. |
+| GET | `/api/weather?lat=<n>&lon=<n>` | Same as above using coordinates (browser geolocation flow). Rate-limited. |
 
-**Responses**
+**HTTP status summary**
 
-- `200` — body includes `meta`, `current`, and `forecast`.
-- `400` — missing/invalid input.
-- `404` — city or coordinates not found upstream.
-- `429` — too many requests (rate limit; see `RATE_LIMIT_WEATHER`).
-- `503` — missing `WEATHER_API_KEY`.
+| Status | When |
+|--------|------|
+| `200` | Success: `meta`, `current`, `forecast`. |
+| `400` | Missing/invalid `city` or invalid `lat`/`lon`. |
+| `404` | OWM could not resolve the city or coordinates. |
+| `429` | Per-IP rate limit exceeded (`RATE_LIMIT_WEATHER`). |
+| `503` | `WEATHER_API_KEY` missing or empty. |
 
-`meta` includes:
+**`meta` (success only)**
 
-- `fetched_at` — ISO UTC timestamp when data was loaded from upstream (or from cache).
-- `sources` — attribution list (OpenWeatherMap, Open-Meteo) with URLs and short roles.
-- `cache_hit` — whether the payload was served from the in-memory TTL cache.
-- `note` — short explanation of the six-day window and provider mix.
+| Field | Meaning |
+|--------|--------|
+| `fetched_at` | ISO UTC timestamp when this cache entry was **first** stored (unchanged on cache hits). |
+| `sources` | Static attribution: OpenWeatherMap + Open-Meteo with `id`, `label`, `url`, `role`. |
+| `cache_hit` | `true` if served from TTL cache. |
+| `note` | Fixed copy explaining six days from tomorrow and when Open-Meteo supplements OWM. |
 
-Numeric fields in `current` / `forecast` are **metric** (°C, m/s); the frontend converts for display when the user chooses °F or mph.
+**`current` fields** (always metric: °C, m/s)
 
-Success shape (abbreviated):
+`city`, `country`, `temperature`, `feels_like`, `humidity`, `condition`, `description`, `icon`, `wind_speed`.
+
+**Each `forecast[]` item**
+
+`date` (ISO date), `weekday`, `label`, `temp_min`, `temp_max`, `condition`, `description`, `icon`, `humidity`, `wind_speed`.
+
+The frontend treats these numbers as **metric** and converts **only in the UI** when the user picks °F or mph.
+
+**Success example (shape)**
 
 ```json
 {
   "meta": {
     "fetched_at": "2026-03-23T12:00:00+00:00",
-    "sources": [ { "id": "openweathermap", "label": "...", "url": "...", "role": "..." } ],
+    "sources": [
+      { "id": "openweathermap", "label": "OpenWeatherMap", "url": "https://openweathermap.org/", "role": "Current weather and 5-day / 3-hour forecast" },
+      { "id": "open-meteo", "label": "Open-Meteo", "url": "https://open-meteo.com/", "role": "Daily values used to complete the 6-day outlook when needed" }
+    ],
     "cache_hit": false,
-    "note": "..."
+    "note": "Six-day outlook starts tomorrow (today excluded). Open-Meteo may supply later days when the free OWM window ends."
   },
-  "current": { "city": "...", "temperature": 0, "wind_speed": 0, "..." : "..." },
-  "forecast": [ { "date": "YYYY-MM-DD", "temp_min": 0, "temp_max": 0, "..." : "..." } ]
+  "current": {
+    "city": "…",
+    "country": "…",
+    "temperature": 0,
+    "feels_like": 0,
+    "humidity": 0,
+    "condition": "…",
+    "description": "…",
+    "icon": "…",
+    "wind_speed": 0
+  },
+  "forecast": [
+    {
+      "date": "YYYY-MM-DD",
+      "weekday": "Mon",
+      "label": "Mar 24",
+      "temp_min": 0,
+      "temp_max": 0,
+      "condition": "…",
+      "description": "…",
+      "icon": "…",
+      "humidity": 0,
+      "wind_speed": 0
+    }
+  ]
 }
 ```
-
-The six-day outlook (starting tomorrow) uses OpenWeatherMap’s 3-hour forecast when possible; any missing calendar days are filled using [Open-Meteo](https://open-meteo.com/) at the same coordinates (no extra API key).
 
 ### Structure
 
@@ -148,7 +194,16 @@ npm run build
 npm run preview
 ```
 
-Set `VITE_API_BASE_URL` (see `.env.example`) to point at your deployed API; default is `http://127.0.0.1:5000/api`.
+Set `VITE_API_BASE_URL` (see `.env.example`) to point at your deployed API; default is `http://127.0.0.1:5000/api` (trailing slash is stripped in code).
+
+### How the frontend uses the API (matches the code)
+
+1. **`src/services/api.js`** — Axios instance with `baseURL` from `VITE_API_BASE_URL` or the localhost default. **`getWeather(city)`** → `GET /weather?city=…`. **`getWeatherByCoords(lat, lon)`** → `GET /weather?lat=…&lon=…`.
+2. **`App.vue`** — Search submits **`getWeather`**; “Use my location” uses **`navigator.geolocation`** then **`getWeatherByCoords`**. On success it keeps **`bundle`** = full JSON (`meta`, `current`, `forecast`). **`addRecentCity`** runs after a successful city search or after geolocation when `current.city` exists (recent list in **`localStorage`** via `utils/recentCities.js`).
+3. **Units** — API values stay metric; **`WeatherCard`** and **`ForecastSection`** use **`utils/displayUnits.js`** with preferences from **`utils/preferences.js`** (°C/°F, m/s/mph).
+4. **Illustrations** — **`utils/weatherArt.js`** maps OWM-style `condition` / `icon` / `description` to SVGs under **`src/assets/weather/`**, rendered by **`WeatherIllustration.vue`**.
+5. **Footer** — **`AppFooter.vue`** reads **`bundle.meta`** when present (last updated, cache hint, sources); before the first load it still shows the same source list and note from static defaults in that component.
+6. **Errors** — Axios **`429`** shows a dedicated “too many requests” message; other failures use **`response.data.error`** when present. **`aria-live`** announces load/error status for assistive tech.
 
 ### Product features
 
@@ -163,7 +218,7 @@ Set `VITE_API_BASE_URL` (see `.env.example`) to point at your deployed API; defa
 ```
 weather-frontend/
 ├── src/
-│   ├── components/
+│   ├── components/     # App.vue, SearchBar, WeatherCard, ForecastSection, PreferencesBar, AppFooter, WeatherIllustration, …
 │   ├── services/api.js
 │   ├── utils/weatherArt.js
 │   ├── utils/preferences.js
