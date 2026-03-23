@@ -7,7 +7,9 @@ This repository is a full-stack weather dashboard: a **Flask** backend talks to 
 ```
 weather_forecast/
 ├── backend/           # Flask API
-└── weather-frontend/  # Vue 3 + Vite + Tailwind CSS
+├── weather-frontend/  # Vue 3 + Vite + Tailwind CSS
+├── docker-compose.yml # optional: build/run frontend container
+└── compose.env.example
 ```
 
 ---
@@ -247,6 +249,28 @@ weather-frontend/
 3. Open the Vite URL (printed in the terminal, usually `http://localhost:5173`)
 
 For stricter CORS in production, set `CORS_ORIGINS` on the backend to your frontend origin(s).
+
+---
+
+## Docker (frontend only)
+
+From the **repository root** (where `docker-compose.yml` lives):
+
+```bash
+docker compose build
+docker compose up
+```
+
+Open **`http://localhost:8080`** (or the host port you set). The Flask API must still be running on the host (or elsewhere) at the URL used when the image was built.
+
+Optional: create a **`.env`** next to `docker-compose.yml` (see **`compose.env.example`**):
+
+- **`VITE_API_BASE_URL`** — passed as a **build arg**; change it, then run **`docker compose build --no-cache`** again so the bundle picks it up.
+- **`FRONTEND_PORT`** — host port mapped to the container’s nginx (default `8080`).
+
+Add **`http://localhost:8080`** and **`http://127.0.0.1:8080`** to backend **`CORS_ORIGINS`** when testing against a containerized UI.
+
+Files: `docker-compose.yml`, `weather-frontend/Dockerfile`, `weather-frontend/nginx.conf`, `weather-frontend/.dockerignore`.
 
 ---
 

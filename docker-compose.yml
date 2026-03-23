@@ -1,0 +1,10 @@
+services:
+  frontend:
+    build:
+      context: ./weather-frontend
+      dockerfile: Dockerfile
+      args:
+        VITE_API_BASE_URL: ${VITE_API_BASE_URL:-http://127.0.0.1:5000/api}
+    ports:
+      - "${FRONTEND_PORT:-8080}:80"
+    restart: unless-stopped
