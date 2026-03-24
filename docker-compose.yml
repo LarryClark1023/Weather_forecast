@@ -1,4 +1,29 @@
 services:
+  backend:
+    build:
+      context: ./weather-backend
+      dockerfile: Dockerfile
+    ports:
+      - "${BACKEND_PORT:-5000}:5000"
+    environment:
+      WEATHER_API_KEY: ${WEATHER_API_KEY:-}
+      WEATHER_CACHE_TTL: ${WEATHER_CACHE_TTL:-300}
+      CORS_ORIGINS: ${CORS_ORIGINS:-}
+      RATE_LIMIT_WEATHER: ${RATE_LIMIT_WEATHER:-60 per minute}
+      LOG_LEVEL: ${LOG_LEVEL:-INFO}
+      SECRET_KEY: ${SECRET_KEY:-}
+    healthcheck:
+      test:
+        [
+          "CMD-SHELL",
+          "python -c \"import urllib.request; urllib.request.urlopen('http://127.0.0.1:5000/api/health')\"",
+        ]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 15s
+    restart: unless-stopped
+
   frontend:
     build:
       context: ./weather-frontend
@@ -7,4 +32,7 @@ services:
         VITE_API_BASE_URL: ${VITE_API_BASE_URL:-http://127.0.0.1:5000/api}
     ports:
       - "${FRONTEND_PORT:-8080}:80"
+    depends_on:
+      backend:
+        condition: service_healthy
     restart: unless-stopped

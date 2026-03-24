@@ -8,7 +8,7 @@ This repository is a full-stack weather dashboard: a **Flask** backend talks to 
 weather_forecast/
 ├── backend/           # Flask API
 ├── weather-frontend/  # Vue 3 + Vite + Tailwind CSS
-├── docker-compose.yml # optional: build/run frontend container
+├── docker-compose.yml # optional: build/run backend + frontend containers
 └── compose.env.example
 ```
 
@@ -252,7 +252,7 @@ For stricter CORS in production, set `CORS_ORIGINS` on the backend to your front
 
 ---
 
-## Docker (frontend only)
+## Docker (backend + frontend)
 
 From the **repository root** (where `docker-compose.yml` lives):
 
@@ -261,16 +261,21 @@ docker compose build
 docker compose up
 ```
 
-Open **`http://localhost:8080`** (or the host port you set). The Flask API must still be running on the host (or elsewhere) at the URL used when the image was built.
+- **UI:** **`http://localhost:8080`** or **`http://127.0.0.1:8080`** (or the host port you set with **`FRONTEND_PORT`**).
+- **API:** **`http://127.0.0.1:5000/api`** by default (or **`BACKEND_PORT`**). The frontend bundle calls whatever you baked in with **`VITE_API_BASE_URL`**.
 
-Optional: create a **`.env`** next to `docker-compose.yml` (see **`compose.env.example`**):
+Create a **`.env`** next to `docker-compose.yml` (see **`compose.env.example`**) and set at least **`WEATHER_API_KEY`** (same value as in local `weather-backend/.env`). Compose injects it into the backend container.
 
-- **`VITE_API_BASE_URL`** — passed as a **build arg**; change it, then run **`docker compose build --no-cache`** again so the bundle picks it up.
-- **`FRONTEND_PORT`** — host port mapped to the container’s nginx (default `8080`).
+Other useful variables (all optional unless noted):
 
-Add **`http://localhost:8080`** and **`http://127.0.0.1:8080`** to backend **`CORS_ORIGINS`** when testing against a containerized UI.
+- **`BACKEND_PORT`** — host port for the API (default `5000`).
+- **`VITE_API_BASE_URL`** — build arg for the static UI; must be reachable from the **browser**. If you change the API port, update this and run **`docker compose build --no-cache frontend`**.
+- **`FRONTEND_PORT`** — host port for nginx (default `8080`).
+- **`CORS_ORIGINS`** — comma-separated origins if you want strict CORS instead of the dev default; include your UI origin(s) when locking this down.
 
-Files: `docker-compose.yml`, `weather-frontend/Dockerfile`, `weather-frontend/nginx.conf`, `weather-frontend/.dockerignore`.
+The frontend service waits until the backend **`/api/health`** check passes before starting.
+
+Files: `docker-compose.yml`, `weather-backend/Dockerfile`, `weather-backend/.dockerignore`, `weather-frontend/Dockerfile`, `weather-frontend/nginx.conf`, `weather-frontend/.dockerignore`.
 
 ---
 
