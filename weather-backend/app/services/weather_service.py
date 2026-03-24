@@ -8,7 +8,7 @@ OPEN_METEO_URL = "https://api.open-meteo.com/v1/forecast"
 def get_current_weather(city):
     if not API_KEY:
         return {
-            "error": "Weather API key is not configured. Set WEATHER_API_KEY in backend/.env.",
+            "error": "Weather API key is not configured. Set WEATHER_API_KEY in weather-backend/.env (or pass it into the container environment).",
             "error_type": "config",
         }
 
@@ -27,7 +27,7 @@ def get_current_weather(city):
 def get_current_weather_coords(lat: float, lon: float):
     if not API_KEY:
         return {
-            "error": "Weather API key is not configured. Set WEATHER_API_KEY in backend/.env.",
+            "error": "Weather API key is not configured. Set WEATHER_API_KEY in weather-backend/.env (or pass it into the container environment).",
             "error_type": "config",
         }
 
@@ -46,7 +46,7 @@ def get_current_weather_coords(lat: float, lon: float):
 def get_forecast(city):
     if not API_KEY:
         return {
-            "error": "Weather API key is not configured. Set WEATHER_API_KEY in backend/.env.",
+            "error": "Weather API key is not configured. Set WEATHER_API_KEY in weather-backend/.env (or pass it into the container environment).",
             "error_type": "config",
         }
 
@@ -65,7 +65,7 @@ def get_forecast(city):
 def get_forecast_coords(lat: float, lon: float):
     if not API_KEY:
         return {
-            "error": "Weather API key is not configured. Set WEATHER_API_KEY in backend/.env.",
+            "error": "Weather API key is not configured. Set WEATHER_API_KEY in weather-backend/.env (or pass it into the container environment).",
             "error_type": "config",
         }
 

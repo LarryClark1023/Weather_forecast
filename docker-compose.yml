@@ -3,10 +3,16 @@ services:
     build:
       context: ./weather-backend
       dockerfile: Dockerfile
+    env_file:
+      # Optional: ports / build args from repo-root .env (do not put an empty WEATHER_API_KEY here).
+      - path: .env
+        required: false
+      # API key and backend options (same file as local `python run.py`).
+      - path: ./weather-backend/.env
+        required: false
     ports:
       - "${BACKEND_PORT:-5000}:5000"
     environment:
-      WEATHER_API_KEY: ${WEATHER_API_KEY:-}
       WEATHER_CACHE_TTL: ${WEATHER_CACHE_TTL:-300}
       CORS_ORIGINS: ${CORS_ORIGINS:-}
       RATE_LIMIT_WEATHER: ${RATE_LIMIT_WEATHER:-60 per minute}

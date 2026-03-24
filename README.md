@@ -264,7 +264,9 @@ docker compose up
 - **UI:** **`http://localhost:8080`** or **`http://127.0.0.1:8080`** (or the host port you set with **`FRONTEND_PORT`**).
 - **API:** **`http://127.0.0.1:5000/api`** by default (or **`BACKEND_PORT`**). The frontend bundle calls whatever you baked in with **`VITE_API_BASE_URL`**.
 
-Create a **`.env`** next to `docker-compose.yml` (see **`compose.env.example`**) and set at least **`WEATHER_API_KEY`** (same value as in local `weather-backend/.env`). Compose injects it into the backend container.
+Set **`WEATHER_API_KEY`** in **`weather-backend/.env`** (copy from **`weather-backend/.env.example`**). Docker Compose loads that file into the backend container, so use the **same file** as for local **`python run.py`**.
+
+Optional: a **`.env`** next to `docker-compose.yml` (see **`compose.env.example`**) for **`BACKEND_PORT`**, **`FRONTEND_PORT`**, **`VITE_API_BASE_URL`**, etc. Do **not** add an empty **`WEATHER_API_KEY=`** there — it would override the key inside the container.
 
 Other useful variables (all optional unless noted):
 
@@ -282,5 +284,5 @@ Files: `docker-compose.yml`, `weather-backend/Dockerfile`, `weather-backend/.doc
 ## Notes
 
 - If Open-Meteo is unreachable, you may get fewer than six forecast cards; the UI notes when that happens.
-- Keep API keys only in `backend/.env`. Set a strong `SECRET_KEY` in production.
+- Keep API keys only in `weather-backend/.env`. Set a strong `SECRET_KEY` in production.
 - Rate limits and cache reduce load on OpenWeatherMap; tune `WEATHER_CACHE_TTL` and `RATE_LIMIT_WEATHER` as needed.
